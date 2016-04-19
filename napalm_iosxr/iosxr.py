@@ -668,6 +668,7 @@ class IOSXRDriver(NetworkDriver):
 
         return cli_output
 
+
     @staticmethod
     def _find_txt(xml_tree, path, default = ''):
 
@@ -676,7 +677,8 @@ class IOSXRDriver(NetworkDriver):
         except Exception:
             return default
 
-    def get_bgp_config(self, group = '', neighbor = ''):
+
+    def get_bgp_config(self, group='', neighbor=''):
 
         bgp_config = {}
 
@@ -751,12 +753,18 @@ class IOSXRDriver(NetworkDriver):
             route_reflector= False
             if group_name not in bgp_group_neighbors.keys():
                 bgp_group_neighbors[group_name] = dict()
+            export_policy_list = list()
+            import_policy_list = list()
+            if export_policy:
+                export_policy_list.append(export_policy)
+            if import_policy:
+                import_policy_list.append(import_policy)
             bgp_group_neighbors[group_name][peer] = {
                 'description'           : description,
                 'remote_as'               : peer_as,
                 'prefix_limit'          : build_prefix_limit(af_table, prefix_limit, prefix_percent, prefix_timeout),
-                'export_policy'         : export_policy,
-                'import_policy'         : import_policy,
+                'export_policy'         : export_policy_list,
+                'import_policy'         : import_policy_list,
                 'local_address'         : local_address,
                 'local_as'              : local_as,
                 'authentication_key'    : password,
@@ -786,13 +794,19 @@ class IOSXRDriver(NetworkDriver):
             prefix_percent= int(self._find_txt(bgp_group, 'NeighborGroupAFTable/NeighborGroupAF/MaximumPrefixes/WarningPercentage', 0))
             prefix_timeout= int(self._find_txt(bgp_group, 'NeighborGroupAFTable/NeighborGroupAF/MaximumPrefixes/RestartTime', 0))
             remove_private= True # is it specified in the XML?
+            export_policy_list = list()
+            import_policy_list = list()
+            if export_policy:
+                export_policy_list.append(export_policy)
+            if import_policy:
+                import_policy_list.append(import_policy)
             bgp_config[group_name] = {
                 'apply_groups'      : [], # on IOS-XR will always be empty list!
                 'description'       : description,
                 'local_as'          : local_as,
                 'type'              : unicode(bgp_type),
-                'import_policy'     : import_policy,
-                'export_policy'     : export_policy,
+                'import_policy'     : import_policy_list,
+                'export_policy'     : export_policy_list,
                 'local_address'     : local_address,
                 'multipath'         : multipath,
                 'multihop_ttl'      : multihop_ttl,
@@ -806,7 +820,8 @@ class IOSXRDriver(NetworkDriver):
 
         return bgp_config
 
-    def get_bgp_neighbors_detail(self, neighbor_address = ''):
+
+    def get_bgp_neighbors_detail(self, neighbor_address=''):
 
         bgp_neighbors = dict()
 
