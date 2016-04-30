@@ -1564,8 +1564,9 @@ class IOSXRDriver(NetworkDriver):
                 if not last_probe_host_name:
                     last_probe_host_name = last_probe_ip_address
                 last_hop_dict['probes'][last_probe_index] = {
-                    'ip_address': last_probe_ip_address,
-                    'host_name': last_probe_host_name
+                    'ip_address': unicode(last_probe_ip_address),
+                    'host_name': unicode(last_probe_host_name),
+                    'rtt': -1.0
                 }
                 continue
             if tag_name == 'HopAddress':
