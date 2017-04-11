@@ -9,20 +9,24 @@
 	"BVI10": {
 		"ipv4": {
 			"192.168.0.1": {
-				"prefix_length": 21
+				"prefix_length": 21,
+                                "primary_ip": True
 			}
 		}
 	},
 	"BVI100": {
 		"ipv4": {
 			"192.168.21.1": {
-				"prefix_length": 24
+				"prefix_length": 24,
+                                "primary_ip": True
 			},
 			"192.168.23.1": {
-				"prefix_length": 24
+				"prefix_length": 24,
+                                "primary_ip": False
 			},
 			"172.17.18.1": {
-				"prefix_length": 24
+				"prefix_length": 24,
+                                "primary_ip": False
 			}
 		},
 		"ipv6": {
