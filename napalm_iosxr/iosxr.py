@@ -1157,9 +1157,15 @@ class IOSXRDriver(NetworkDriver):
             if u'ipv4' not in interfaces_ip[interface_name].keys():
                 interfaces_ip[interface_name][u'ipv4'] = {}
             if primary_ip not in interfaces_ip[interface_name].get(u'ipv4', {}).keys():
-                interfaces_ip[interface_name][u'ipv4'][primary_ip] = {
-                    u'prefix_length': primary_prefix
-                }
+                if 'Loopback' not in interface_name:
+                    interfaces_ip[interface_name][u'ipv4'][primary_ip] = {
+                        u'prefix_length': primary_prefix,
+                        u'primary_ip': True
+                    }
+                else:
+                    interfaces_ip[interface_name][u'ipv4'][primary_ip] = {
+                        u'prefix_length': primary_prefix
+                    }
             for secondary_address in interface.xpath('VRFTable/VRF/Detail/SecondaryAddress/Entry'):
                 secondary_ip = napalm_base.helpers.ip(
                     napalm_base.helpers.find_txt(secondary_address, 'Address'))
