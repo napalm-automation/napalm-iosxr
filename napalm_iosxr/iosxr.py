@@ -113,11 +113,11 @@ class IOSXRDriver(NetworkDriver):
         else:
             return self.device.compare_config().strip()
 
-    def commit_config(self):
+    def commit_config(self, label=None, comment=None, confirmed=None):
         if self.replace:
-            self.device.commit_replace_config()
+            self.device.commit_replace_config(label=label, comment=comment, confirmed=confirmed)
         else:
-            self.device.commit_config()
+            self.device.commit_config(label=label, comment=comment, confirmed=confirmed)
         self.pending_changes = False
         if not self.lock_on_connect:
             self.device.unlock()
