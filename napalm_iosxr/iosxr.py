@@ -18,6 +18,7 @@ from __future__ import unicode_literals
 # import stdlib
 import re
 import copy
+import socket
 from collections import defaultdict
 
 # import third party lib
@@ -25,6 +26,8 @@ from lxml import etree as ETREE
 
 from netaddr import IPAddress  # needed for traceroute, to check IP version
 from netaddr.core import AddrFormatError
+
+from netmiko import __version__ as netmiko_version
 
 from pyIOSXR import IOSXR
 from pyIOSXR.exceptions import ConnectError
@@ -57,13 +60,41 @@ class IOSXRDriver(NetworkDriver):
         if optional_args is None:
             optional_args = {}
         self.port = optional_args.get('port', 22)
-        self.lock_on_connect = optional_args.get('config_lock', True)
+        self.lock_on_connect = optional_args.get('config_lock', False)
+        # Netmiko possible arguments
+        netmiko_argument_map = {
+            'keepalive': 30,
+            'verbose': False,
+            'global_delay_factor': 1,
+            'use_keys': False,
+            'key_file': None,
+            'ssh_strict': False,
+            'system_host_keys': False,
+            'alt_host_keys': False,
+            'alt_key_file': '',
+            'ssh_config_file': None
+        }
+        fields = netmiko_version.split('.')
+        fields = [int(x) for x in fields]
+        maj_ver, min_ver, bug_fix = fields
+        if maj_ver >= 2:
+            netmiko_argument_map['allow_agent'] = False
+        elif maj_ver == 1 and min_ver >= 1:
+            netmiko_argument_map['allow_agent'] = False
+        # Build dict of any optional Netmiko args
+        self.netmiko_optional_args = {}
+        for k, v in netmiko_argument_map.items():
+            try:
+                self.netmiko_optional_args[k] = optional_args[k]
+            except KeyError:
+                pass
         self.device = IOSXR(hostname,
                             username,
                             password,
                             timeout=timeout,
                             port=self.port,
-                            lock=self.lock_on_connect)
+                            lock=self.lock_on_connect,
+                            **self.netmiko_optional_args)
 
     def open(self):
         try:
@@ -75,6 +106,18 @@ class IOSXRDriver(NetworkDriver):
         self.device.close()
 
     def is_alive(self):
+        null = chr(0)
+        try:
+            # Try sending ASCII null byte to maintain
+            #   the connection alive
+            self.device.device.send_command(null)
+        except (socket.error, EOFError):
+            # If unable to send, we can tell for sure
+            #   that the connection is unusable,
+            #   hence return False.
+            return {
+                'is_alive': False
+            }
         return {
             'is_alive': self.device.device.remote_conn.transport.is_active()
         }
@@ -1012,7 +1055,7 @@ class IOSXRDriver(NetworkDriver):
                     'advertised_prefix_count': advertised_prefix_count,
                     'flap_count': flap_count
                 })
-
+        bgp_neighbors_detail['global'] = bgp_neighbors_detail.pop('default')
         return bgp_neighbors_detail
 
     def get_arp_table(self):
@@ -1240,15 +1283,30 @@ class IOSXRDriver(NetworkDriver):
             prefix_tag = '<PrefixLength>{prefix_length}</PrefixLength>'.format(
                 prefix_length=dest_split[1])
 
-        route_info_rpc_command = '<Get><Operational><RIB><VRFTable><VRF><Naming><VRFName>default\
-        </VRFName></Naming><AFTable><AF><Naming><AFName>IPv4</AFName></Naming><SAFTable><SAF>\
-        <Naming><SAFName>Unicast</SAFName></Naming><IP_RIBRouteTable><IP_RIBRoute><Naming>\
-        <RouteTableName>default</RouteTableName></Naming><RouteTable><Route><Naming><Address>\
-        {network}</Address>{prefix}</Naming></Route></RouteTable></IP_RIBRoute></IP_RIBRouteTable>\
-        </SAF></SAFTable></AF></AFTable></VRF></VRFTable></RIB></Operational></Get>'.format(
-            network=network,
-            prefix=prefix_tag
-        )
+        ipv = 4
+        try:
+            ipv = IPAddress(network).version
+        except AddrFormatError:
+            raise TypeError('Wrong destination IP Address!')
+
+        if ipv == 6:
+            route_info_rpc_command = '<Get><Operational><IPV6_RIB><VRFTable><VRF><Naming><VRFName>\
+            default</VRFName></Naming><AFTable><AF><Naming><AFName>IPv6</AFName></Naming><SAFTable>\
+            <SAF><Naming><SAFName>Unicast</SAFName></Naming><IP_RIBRouteTable><IP_RIBRoute><Naming>\
+            <RouteTableName>default</RouteTableName></Naming><RouteTable><Route><Naming><Address>\
+            {network}</Address>{prefix}</Naming></Route></RouteTable></IP_RIBRoute>\
+            </IP_RIBRouteTable></SAF></SAFTable></AF></AFTable></VRF></VRFTable></IPV6_RIB>\
+            </Operational></Get>'.format(network=network, prefix=prefix_tag)
+        else:
+            route_info_rpc_command = '<Get><Operational><RIB><VRFTable><VRF><Naming><VRFName>default\
+            </VRFName></Naming><AFTable><AF><Naming><AFName>IPv4</AFName></Naming><SAFTable><SAF>\
+            <Naming><SAFName>Unicast</SAFName></Naming><IP_RIBRouteTable><IP_RIBRoute><Naming>\
+            <RouteTableName>default</RouteTableName></Naming><RouteTable><Route><Naming><Address>\
+            {network}</Address>{prefix}</Naming></Route></RouteTable></IP_RIBRoute></IP_RIBRouteTable>\
+            </SAF></SAFTable></AF></AFTable></VRF></VRFTable></RIB></Operational></Get>'.format(
+                network=network,
+                prefix=prefix_tag
+            )
 
         routes_tree = ETREE.fromstring(self.device.make_rpc_call(route_info_rpc_command))
 
