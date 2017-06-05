@@ -886,7 +886,7 @@ class IOSXRDriver(NetworkDriver):
 
         bgp_neighbors_detail = {}
 
-        active_vrfs = ['default']
+        active_vrfs = ['global']
 
         active_vrfs_rpc_request = '<Get><Operational><BGP><ConfigInstanceTable><ConfigInstance>\
         <Naming><InstanceName>default</InstanceName></Naming><ConfigInstanceVRFTable/>\
