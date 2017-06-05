@@ -7,7 +7,7 @@
                     <Instance>
                         <Naming>
                             <InstanceName>
-                                default
+                                global
                             </InstanceName>
                         </Naming>
                         <InstanceActive>
@@ -15,12 +15,12 @@
                                 <VRF>
                                     <Naming>
                                         <VRFName>
-                                            default
+                                            global
                                         </VRFName>
                                     </Naming>
                                     <GlobalProcessInfo>
                                         <VRFName>
-                                            default
+                                            global
                                         </VRFName>
                                         <VRFID>
                                             1610612736
@@ -33,7 +33,7 @@
                                                 13335
                                             </LocalAS>
                                             <InstanceName>
-                                                default
+                                                global
                                             </InstanceName>
                                             <RestartCount>
                                                 3
@@ -1048,7 +1048,7 @@
                                                 </Entry>
                                             </IsMultiProtocolReceived>
                                             <VRFName>
-                                                default
+                                                global
                                             </VRFName>
                                             <StandbyRP>
                                                 false
@@ -3678,7 +3678,7 @@
                                                 </Entry>
                                             </IsMultiProtocolReceived>
                                             <VRFName>
-                                                default
+                                                global
                                             </VRFName>
                                             <StandbyRP>
                                                 false
