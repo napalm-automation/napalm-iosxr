@@ -289,3 +289,25 @@ class IOSXRSSHDriver(NetworkDriver):
             response = self._send_command(command)
             cli_output[command] = response
         return cli_output
+
+    def get_interfaces(self):
+
+        interfaces = {}
+
+        INTERFACE_DEFAULTS = {
+            'is_enabled': False,
+            'is_up': False,
+            'mac_address': u'',
+            'description': u'',
+            'speed': -1,
+            'last_flapped': -1.0
+        }
+
+        interfaces_command = 'show interfaces'
+
+        interfaces_ssh_reply = self._send_command(interfaces_command)
+
+        t = napalm_base.helpers.textfsm_extractor(self, "cisco_xr_show_interfaces", interfaces_ssh_reply)
+        t = napalm_base.helpers.textfsm_extractor(self, "cisco_xr_show_interfaces_admin", interfaces_ssh_reply)
+
+        return interfaces
