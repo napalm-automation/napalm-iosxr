@@ -1,3 +1,4 @@
 napalm-base>=0.18.0
 pyIOSXR>=0.51
 netaddr
+sisqo>=2.1.1
