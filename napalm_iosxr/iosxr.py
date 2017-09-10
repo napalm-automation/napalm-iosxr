@@ -1784,3 +1784,57 @@ class IOSXRDriver(NetworkDriver):
                 self.device._execute_config_show('show configuration merge'))
 
         return config
+
+    def get_isis_hostnames(self):
+        isis_hostname_rpc_request = "<Get><Operational><ISIS><InstanceTable>\
+        <Instance><Naming><InstanceName Match='*'/></Naming><HostnameTable>\
+        </HostnameTable></Instance></InstanceTable></ISIS></Operational></Get>"
+        isis_hostname_rpc_reply = ETREE.fromstring(
+            self.device.make_rpc_call(isis_hostname_rpc_request))
+        hostnames = {}
+        for system_tree in isis_hostname_rpc_reply.xpath('//HostnameTable/Hostname'):
+            system_id = napalm_base.helpers.find_txt(system_tree, 'Naming/SystemID')
+            hostname = napalm_base.helpers.find_txt(system_tree, 'HostName')
+            hostnames.update({system_id: hostname})
+        return hostnames
+
+    def get_isis_adjacencies(self):
+        # generate dictionary of ISIS system-id as keys and hostnames as values
+        hostnames = self.get_isis_hostnames()
+        isis_neighbor_rpc_request = "<Get><Operational><ISIS><InstanceTable>\
+                                  <Instance><Naming><InstanceName Match='*'/>\
+                                  </Naming><NeighborTable></NeighborTable>\
+                                  </Instance></InstanceTable></ISIS></Operational></Get>"
+        isis_neighbor_rpc_reply = ETREE.fromstring(
+            self.device.make_rpc_call(isis_neighbor_rpc_request))
+        instances = {}
+        for instance in isis_neighbor_rpc_reply.xpath('//ISIS/InstanceTable/Instance'):
+            instance_name = napalm_base.helpers.find_txt(
+                instance, 'Naming/InstanceName')
+            neighbors = {}
+            for neighbor_tree in instance.xpath('NeighborTable/Neighbor'):
+                system_id = hostnames[napalm_base.helpers.find_txt(
+                    neighbor_tree, 'Naming/SystemID')]
+                interface_name = napalm_base.helpers.find_txt(
+                    neighbor_tree, 'Naming/InterfaceName')
+                neighbor_state = napalm_base.helpers.find_txt(
+                    neighbor_tree, 'NeighborState')
+                circuit_type = napalm_base.helpers.find_txt(
+                    neighbor_tree, 'NeighborCircuitType')
+                if int(napalm_base.helpers.find_txt(neighbor_tree,
+                                                    'NeighborIETF_NSFCapableFlag')) == 1:
+                    ietf_nsf_flag = True
+                else:
+                    ietf_nsf_flag = False
+                network_type = napalm_base.helpers.find_txt(
+                    neighbor_tree, 'NeighborMediaType')
+                neighbors.update({system_id:
+                                  {'interface_name': interface_name,
+                                   'neighbor_state': neighbor_state,
+                                   'circuit_type': circuit_type,
+                                   'ietf_nsf_flag': ietf_nsf_flag,
+                                   'network_type': network_type,
+                                   }
+                                  })
+            instances.update({instance_name: neighbors})
+        return instances
