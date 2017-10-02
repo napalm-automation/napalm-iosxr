@@ -1828,13 +1828,27 @@ class IOSXRDriver(NetworkDriver):
                     ietf_nsf_flag = False
                 network_type = napalm_base.helpers.find_txt(
                     neighbor_tree, 'NeighborMediaType')
+                neighbor_area = napalm_base.helpers.find_txt(
+                    neighbor_tree, 'NeighborActiveAreaAddresses/Entry')
+                neighbor_uptime = napalm_base.helpers.find_txt(
+                    neighbor_tree, 'NeighborUptime')
+                topologies_supported = []
+                for topology in neighbor_tree.xpath('TopologiesSupported/Entry'):
+                    af_name = napalm_base.helpers.find_txt(
+                        topology, 'AFName')
+                    saf_name = napalm_base.helpers.find_txt(
+                        topology, 'SAFName')
+                    topologies_supported.append(af_name + " " + saf_name)
                 neighbors.update({system_id:
-                                  {'interface_name': interface_name,
-                                   'neighbor_state': neighbor_state,
-                                   'circuit_type': circuit_type,
-                                   'ietf_nsf_flag': ietf_nsf_flag,
-                                   'network_type': network_type,
-                                   }
-                                  })
+                              {'interface_name': interface_name,
+                               'neighbor_state': neighbor_state,
+                               'circuit_type': circuit_type,
+                               'ietf_nsf_flag': ietf_nsf_flag,
+                               'network_type': network_type,
+                               'neighbor_area': neighbor_area,
+                               'neighbor_uptime': neighbor_uptime,
+                               'topologies_supported': topologies_supported
+                               }
+                              })
             instances.update({instance_name: neighbors})
         return instances
