@@ -1193,7 +1193,8 @@ class IOSXRDriver(NetworkDriver):
                 interfaces_ip[interface_name][u'ipv4'] = {}
             if primary_ip not in interfaces_ip[interface_name].get(u'ipv4', {}).keys():
                 interfaces_ip[interface_name][u'ipv4'][primary_ip] = {
-                    u'prefix_length': primary_prefix
+                    u'prefix_length': primary_prefix,
+                    u'primary_ip': True
                 }
             for secondary_address in interface.xpath('VRFTable/VRF/Detail/SecondaryAddress/Entry'):
                 secondary_ip = napalm_base.helpers.ip(
@@ -1202,7 +1203,8 @@ class IOSXRDriver(NetworkDriver):
                     int, napalm_base.helpers.find_txt(secondary_address, 'PrefixLength'))
                 if secondary_ip not in interfaces_ip[interface_name]:
                     interfaces_ip[interface_name][u'ipv4'][secondary_ip] = {
-                        u'prefix_length': secondary_prefix
+                        u'prefix_length': secondary_prefix,
+                        u'primary_ip': False
                     }
 
         # parsing IPv6
